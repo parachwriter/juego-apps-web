@@ -95,4 +95,15 @@ El juego guarda el **High Score** usando `localStorage`, por lo que el mejor pun
 ### 1. Clonar el repositorio
 
 ```bash
-git clone URL_DEL_REPOSITORIO
+git https://github.com/parachwriter/juego-apps-web.git
+
+
+Ingresar a la carpeta del proyecto 
+
+cd juego-survivor
+npm install 
+npm run dev 
+
+Se generará un enlace localhost 
+como 
+"http://localhost:5175" 
