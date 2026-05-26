@@ -167,6 +167,7 @@ export default class GameScene extends Phaser.Scene {
       this.bgm = this.sound.add("bgm", { loop: true, volume: 0.5 });
       this.sfxHit = this.sound.add("sfx_hit", { volume: 0.7 });
       this.sfxPickup = this.sound.add("sfx_pickup", { volume: 0.8 });
+      this.sfxShoot = this.sound.add("sfx_shoot", { volume: 0.5 }); 
 
       const playBgmIfAllowed = () => {
         try {

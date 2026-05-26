@@ -130,6 +130,15 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     );
     this.bullets.add(bullet);
 
+    // 👇 AQUÍ REPRODUCIMOS EL SONIDO DE DISPARO
+    try {
+      if (this.scene.sfxShoot && this.scene.audioEnabled) {
+        this.scene.sfxShoot.play();
+      }
+    } catch (e) {
+      console.warn("No se pudo reproducir el sonido de disparo", e);
+    }
+
     this.scene.time.delayedCall(this.fireRate, () => {
       this.canShoot = true;
     });

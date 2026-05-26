@@ -51,6 +51,7 @@ export default class BootScene extends Phaser.Scene {
     this.load.audio("bgm", "/assets/sound/bgm.mp3");
 this.load.audio("sfx_hit", "/assets/sound/sfx_hit.mp3");
 this.load.audio("sfx_pickup", "/assets/sound/sfx_pickup.mp3");
+this.load.audio("sfx_shoot", "/assets/sound/sfx_shoot.mp3");
 
     this.load.on("complete", () => {
       if (this.loadingText) this.loadingText.destroy();
