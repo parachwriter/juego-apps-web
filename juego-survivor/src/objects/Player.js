@@ -104,17 +104,15 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   // ===================================
   // ROTAR HACIA MOUSE
   // ===================================
-  rotateToMouse() {
-    const pointer = this.scene.input.activePointer;
-    const angle = Phaser.Math.Angle.Between(
-      this.x,
-      this.y,
-      pointer.worldX,
-      pointer.worldY,
-    );
-    this.setRotation(angle);
+rotateToMouse() {
+  const pointer = this.scene.input.activePointer;
+  // En vez de rotar, solo voltear horizontalmente según el mouse
+  if (pointer.worldX < this.x) {
+    this.setFlipX(true);
+  } else {
+    this.setFlipX(false);
   }
-
+}
   // ===================================
   // DISPARAR
   // ===================================
