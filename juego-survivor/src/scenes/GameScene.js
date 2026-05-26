@@ -199,14 +199,49 @@ export default class GameScene extends Phaser.Scene {
   }
 
   createAnimations() {
+    // PLAYER
+    if (!this.anims.exists("player_idle")) {
+      this.anims.create({
+        key: "player_idle",
+        frames: [{ key: "player_idle" }],
+        frameRate: 1,
+        repeat: -1,
+      });
+    }
+
     if (!this.anims.exists("player_walk")) {
       this.anims.create({
         key: "player_walk",
-        frames: this.anims.generateFrameNumbers("player", {
-          start: 0,
-          end: 8,
-        }),
-        frameRate: 12,
+        frames: [{ key: "player_walk1" }, { key: "player_walk2" }],
+        frameRate: 8,
+        repeat: -1,
+      });
+    }
+
+    if (!this.anims.exists("player_hurt")) {
+      this.anims.create({
+        key: "player_hurt",
+        frames: [{ key: "player_hurt" }],
+        frameRate: 1,
+        repeat: 0,
+      });
+    }
+
+    if (!this.anims.exists("player_shoot")) {
+      this.anims.create({
+        key: "player_shoot",
+        frames: [{ key: "player_action1" }, { key: "player_action2" }],
+        frameRate: 10,
+        repeat: 0,
+      });
+    }
+
+    // ZOMBIE
+    if (!this.anims.exists("zombie_idle")) {
+      this.anims.create({
+        key: "zombie_idle",
+        frames: [{ key: "zombie_idle" }],
+        frameRate: 1,
         repeat: -1,
       });
     }
@@ -214,12 +249,18 @@ export default class GameScene extends Phaser.Scene {
     if (!this.anims.exists("zombie_walk")) {
       this.anims.create({
         key: "zombie_walk",
-        frames: this.anims.generateFrameNumbers("zombie", {
-          start: 0,
-          end: 7,
-        }),
-        frameRate: 8,
+        frames: [{ key: "zombie_walk1" }, { key: "zombie_walk2" }],
+        frameRate: 6,
         repeat: -1,
+      });
+    }
+
+    if (!this.anims.exists("zombie_hurt")) {
+      this.anims.create({
+        key: "zombie_hurt",
+        frames: [{ key: "zombie_hurt" }],
+        frameRate: 1,
+        repeat: 0,
       });
     }
   }

@@ -6,7 +6,6 @@ export default class BootScene extends Phaser.Scene {
   }
 
   preload() {
-    // texto de carga
     this.loadingText = this.add
       .text(this.scale.width / 2, this.scale.height / 2, "Cargando 0%", {
         fontSize: "24px",
@@ -19,38 +18,40 @@ export default class BootScene extends Phaser.Scene {
         this.loadingText.setText(`Cargando ${Math.round(p * 100)}%`);
     });
 
-    // PLAYER
-    this.load.spritesheet("player", "/assets/Character/player.png", {
-      frameWidth: 80,
-      frameHeight: 110,
-    });
+    // PLAYER — frames individuales
+    this.load.image("player_idle",    "/assets/Character/adventurer_idle.png");
+    this.load.image("player_walk1",   "/assets/Character/adventurer_walk1.png");
+    this.load.image("player_walk2",   "/assets/Character/adventurer_walk2.png");
+    this.load.image("player_hurt",    "/assets/Character/adventurer_hurt.png");
+    this.load.image("player_stand",   "/assets/Character/adventurer_stand.png");
+    this.load.image("player_action1", "/assets/Character/adventurer_action1.png");
+    this.load.image("player_action2", "/assets/Character/adventurer_action2.png");
 
-    // ZOMBIES
-    this.load.spritesheet("zombie", "/assets/zombie/fat_zombie.png", {
-      frameWidth: 192,
-      frameHeight: 88,
-    });
+    // ZOMBIE — frames individuales
+    this.load.image("zombie_idle",   "/assets/zombie/zombie_idle.png");
+    this.load.image("zombie_walk1",  "/assets/zombie/zombie_walk1.png");
+    this.load.image("zombie_walk2",  "/assets/zombie/zombie_walk2.png");
+    this.load.image("zombie_hurt",   "/assets/zombie/zombie_hurt.png");
+    this.load.image("zombie_action1","/assets/zombie/zombie_action1.png");
+    this.load.image("zombie_action2","/assets/zombie/zombie_action2.png");
 
-    // TILESET DEL MUNDO
+    // TILESET
     this.load.image("tiles", "/assets/world/tilemap.png");
 
     // BULLET
     this.load.image("bullet", "/assets/Character/bullet.png");
 
-    // AUDIO: cargar variantes para compatibilidad de navegadores
-    // Si tus archivos actuales tienen otros nombres/extensiones, añádelos aquí o renómbralos en public/assets/sound/
+    // AUDIO
     this.load.audio("bgm", [
       "/assets/sound/bgm.mp3",
       "/assets/sound/bgm.ogg",
       "/assets/sound/bmg.mp3",
     ]);
-
     this.load.audio("sfx_hit", [
       "/assets/sound/sfx_hit.mp3",
       "/assets/sound/sfx_hit.ogg",
       "/assets/sound/sfx_hit.wav",
     ]);
-
     this.load.audio("sfx_pickup", [
       "/assets/sound/sfx_pickup.mp3",
       "/assets/sound/sfx_pickup.ogg",
