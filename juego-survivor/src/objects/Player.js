@@ -57,7 +57,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     // SHOOT COOLDOWN
     // =========================
     this.canShoot = true;
-    this.fireRate = 200;
+    this.fireRate = 50;
 
     // =========================
     // INPUT MOUSE
@@ -104,15 +104,15 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   // ===================================
   // ROTAR HACIA MOUSE
   // ===================================
-rotateToMouse() {
-  const pointer = this.scene.input.activePointer;
-  // En vez de rotar, solo voltear horizontalmente según el mouse
-  if (pointer.worldX < this.x) {
-    this.setFlipX(true);
-  } else {
-    this.setFlipX(false);
+  rotateToMouse() {
+    const pointer = this.scene.input.activePointer;
+    // En vez de rotar, solo voltear horizontalmente según el mouse
+    if (pointer.worldX < this.x) {
+      this.setFlipX(true);
+    } else {
+      this.setFlipX(false);
+    }
   }
-}
   // ===================================
   // DISPARAR
   // ===================================

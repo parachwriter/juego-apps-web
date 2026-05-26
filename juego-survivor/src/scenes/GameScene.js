@@ -13,10 +13,10 @@ export default class GameScene extends Phaser.Scene {
   // =========================
   getLevelStats(level) {
     const stats = {
-      1: { speed: 80, health: 2, spawnDelay: 1500 },
-      2: { speed: 110, health: 3, spawnDelay: 1100 },
-      3: { speed: 145, health: 5, spawnDelay: 750 },
-      4: { speed: 180, health: 8, spawnDelay: 450 },
+      1: { speed: 80, health: 2, spawnDelay: 1500, victoryScore: 200 },
+      2: { speed: 110, health: 3, spawnDelay: 1100, victoryScore: 250 },
+      3: { speed: 145, health: 5, spawnDelay: 750, victoryScore: 300 },
+      4: { speed: 180, health: 8, spawnDelay: 450, victoryScore: 400 },
     };
     return stats[Math.min(level, 4)];
   }
@@ -88,7 +88,8 @@ export default class GameScene extends Phaser.Scene {
     this.score = 0;
     // persistencia
     this.highScore = parseInt(localStorage.getItem("highScore") || "0", 10);
-    this.level = 1; // siempre empieza en 1, la dificultad sube durante la partida
+    const { startLevel } = this.scene.settings.data || {};
+this.level = startLevel || 1;
     this.audioEnabled = localStorage.getItem("audioEnabled");
     if (this.audioEnabled === null) this.audioEnabled = "true";
     this.audioEnabled = this.audioEnabled === "true";
@@ -471,20 +472,35 @@ export default class GameScene extends Phaser.Scene {
   }
 
   addScore(amount) {
-    this.score += amount;
-    this.scoreText.setText(`Score: ${this.score}`);
-    if (this.hudHigh && this.score > this.highScore) {
-      this.highScore = this.score;
-      localStorage.setItem("highScore", String(this.highScore));
-      this.hudHigh.setText(`High: ${this.highScore}`);
+  this.score += amount;
+  this.scoreText.setText(`Score: ${this.score}`);
+
+  if (this.hudHigh && this.score > this.highScore) {
+    this.highScore = this.score;
+    localStorage.setItem("highScore", String(this.highScore));
+    this.hudHigh.setText(`High: ${this.highScore}`);
+  }
+
+  const { victoryScore } = this.getLevelStats(this.level);
+
+  if (!this.victory && this.score >= victoryScore) {
+    // Si no es el último nivel, sube de nivel en vez de ganar
+    if (this.level < 4) {
+      this.score = 0;
+      this.scoreText.setText(`Score: ${this.score}`);
+      this.level++;
+      localStorage.setItem("level", String(this.level));
+      this.hudLevel.setText(`Level: ${this.level}`);
+      this.applyLevelDifficulty();
+      return;
     }
 
-    if (!this.victory && this.score >= 200) {
-      this.victory = true;
-      try {
-        if (this.bgm && this.bgm.isPlaying) this.bgm.stop();
-      } catch (e) {}
-      this.scene.start("gameover", { score: this.score, victory: true });
-    }
+    // Nivel 4 completado → victoria
+    this.victory = true;
+    try {
+      if (this.bgm && this.bgm.isPlaying) this.bgm.stop();
+    } catch (e) {}
+    this.scene.start("gameover", { score: this.score, victory: true });
   }
+}
 }
