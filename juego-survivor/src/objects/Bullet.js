@@ -46,7 +46,12 @@ export default class Bullet extends Phaser.Physics.Arcade.Image {
     // DESTRUIR AUTOMÁTICAMENTE
     // =========================
     scene.time.delayedCall(2000, () => {
-      if (this.active) this.destroy();
+      if (this.active) {
+        this.setActive(false);
+        this.setVisible(false);
+        this.body.setEnable(false);
+        this.destroy();
+      }
     });
   }
 }

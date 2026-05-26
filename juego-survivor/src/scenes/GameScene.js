@@ -8,9 +8,21 @@ export default class GameScene extends Phaser.Scene {
     super("game");
   }
 
+  // =========================
+  // STATS POR NIVEL
+  // =========================
+  getLevelStats(level) {
+    const stats = {
+      1: { speed: 80, health: 2, spawnDelay: 1500 },
+      2: { speed: 110, health: 3, spawnDelay: 1100 },
+      3: { speed: 145, health: 5, spawnDelay: 750 },
+      4: { speed: 180, health: 8, spawnDelay: 450 },
+    };
+    return stats[Math.min(level, 4)];
+  }
+
   create() {
     this.cameras.main.setBackgroundColor("#111111");
-
 
     // =========================
     // SUELO CON TILES INDIVIDUALES
@@ -76,7 +88,7 @@ export default class GameScene extends Phaser.Scene {
     this.score = 0;
     // persistencia
     this.highScore = parseInt(localStorage.getItem("highScore") || "0", 10);
-    this.level = parseInt(localStorage.getItem("level") || "1", 10);
+    this.level = 1; // siempre empieza en 1, la dificultad sube durante la partida
     this.audioEnabled = localStorage.getItem("audioEnabled");
     if (this.audioEnabled === null) this.audioEnabled = "true";
     this.audioEnabled = this.audioEnabled === "true";
@@ -145,25 +157,31 @@ export default class GameScene extends Phaser.Scene {
       this.muteBtn.setText(this.audioEnabled ? "🔊" : "🔈");
     });
 
-    // Level HUD and timer
+    // Level HUD
     this.hudLevel = this.add
       .text(16, 96, `Level: ${this.level}`, {
         fontSize: "18px",
         color: "#ffffff",
       })
       .setDepth(10);
+
+    // Timer de nivel — sube cada 30s hasta nivel 4
     this.levelTimer = this.time.addEvent({
       delay: 30000,
       callback: () => {
+        if (this.level >= 4) return;
         this.level++;
         localStorage.setItem("level", String(this.level));
         this.hudLevel.setText(`Level: ${this.level}`);
+        this.applyLevelDifficulty();
       },
       loop: true,
     });
 
+    // Spawn inicial con stats de nivel 1
+    const initialStats = this.getLevelStats(1);
     this.spawnTimer = this.time.addEvent({
-      delay: 1500,
+      delay: initialStats.spawnDelay,
       callback: this.spawnEnemy,
       callbackScope: this,
       loop: true,
@@ -218,7 +236,6 @@ export default class GameScene extends Phaser.Scene {
         repeat: -1,
       });
     }
-
     if (!this.anims.exists("player_walk")) {
       this.anims.create({
         key: "player_walk",
@@ -227,7 +244,6 @@ export default class GameScene extends Phaser.Scene {
         repeat: -1,
       });
     }
-
     if (!this.anims.exists("player_hurt")) {
       this.anims.create({
         key: "player_hurt",
@@ -236,7 +252,6 @@ export default class GameScene extends Phaser.Scene {
         repeat: 0,
       });
     }
-
     if (!this.anims.exists("player_shoot")) {
       this.anims.create({
         key: "player_shoot",
@@ -255,7 +270,6 @@ export default class GameScene extends Phaser.Scene {
         repeat: -1,
       });
     }
-
     if (!this.anims.exists("zombie_walk")) {
       this.anims.create({
         key: "zombie_walk",
@@ -264,7 +278,6 @@ export default class GameScene extends Phaser.Scene {
         repeat: -1,
       });
     }
-
     if (!this.anims.exists("zombie_hurt")) {
       this.anims.create({
         key: "zombie_hurt",
@@ -275,8 +288,60 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
+  // =========================
+  // APLICAR DIFICULTAD
+  // =========================
+  applyLevelDifficulty() {
+    const { speed, health, spawnDelay } = this.getLevelStats(this.level);
+
+    // Actualizar enemigos ya en escena
+    this.enemies.getChildren().forEach((enemy) => {
+      if (enemy && enemy.active) {
+        enemy.speed = speed;
+        enemy.health = health;
+      }
+    });
+
+    // Reiniciar spawn timer con nuevo delay
+    this.spawnTimer.remove();
+    this.spawnTimer = this.time.addEvent({
+      delay: spawnDelay,
+      callback: this.spawnEnemy,
+      callbackScope: this,
+      loop: true,
+    });
+
+    // Notificación en pantalla
+    const isMax = this.level === 4;
+    const label = isMax ? "¡NIVEL MÁXIMO!" : `¡NIVEL ${this.level}!`;
+    const color = isMax ? "#ff0000" : "#ff4444";
+
+    const text = this.add
+      .text(this.scale.width / 2, this.scale.height / 2, label, {
+        fontSize: "48px",
+        color,
+        fontStyle: "bold",
+        stroke: "#000000",
+        strokeThickness: 6,
+      })
+      .setOrigin(0.5)
+      .setDepth(30);
+
+    this.tweens.add({
+      targets: text,
+      y: text.y - 60,
+      alpha: 0,
+      duration: 1500,
+      onComplete: () => text.destroy(),
+    });
+  }
+
+  // =========================
+  // SPAWN ENEMIGO
+  // =========================
   spawnEnemy() {
     if (!this.player || !this.player.active) return;
+
     const margin = 60;
     let x = Phaser.Math.Between(margin, this.scale.width - margin);
     let y = Phaser.Math.Between(margin, this.scale.height - margin);
@@ -292,7 +357,12 @@ export default class GameScene extends Phaser.Scene {
       y = Phaser.Math.Between(margin, this.scale.height - margin);
     }
 
+    const { speed, health } = this.getLevelStats(this.level);
+
     const enemy = new Enemy(this, x, y, this.player);
+    enemy.speed = speed;
+    enemy.health = health;
+
     enemy.play("zombie_walk");
     this.enemies.add(enemy, true);
   }
@@ -348,8 +418,15 @@ export default class GameScene extends Phaser.Scene {
   handleBulletEnemy(bullet, enemy) {
     if (!bullet.active || !enemy.active) return;
 
+    bullet.setActive(false);
+    bullet.setVisible(false);
+    bullet.body.setEnable(false);
+
     enemy.takeDamage(bullet.damage);
-    bullet.destroy();
+
+    this.time.delayedCall(0, () => {
+      if (bullet?.destroy) bullet.destroy();
+    });
 
     if (!enemy.active) {
       this.addScore(10);
