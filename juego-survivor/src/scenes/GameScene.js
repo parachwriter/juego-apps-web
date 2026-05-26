@@ -11,19 +11,37 @@ export default class GameScene extends Phaser.Scene {
   create() {
     this.cameras.main.setBackgroundColor("#111111");
 
-    this.add
-      .rectangle(0, 0, this.scale.width, this.scale.height, 0x111111)
-      .setOrigin(0);
 
-    this.add
-      .tileSprite(0, 0, this.scale.width, this.scale.height, "tiles")
-      .setOrigin(0)
-      .setScrollFactor(0);
+    // =========================
+    // SUELO CON TILES INDIVIDUALES
+    // =========================
+    const TILE_SIZE = 16;
+    const tiles = [
+      "tile_0048",
+      "tile_0049",
+      "tile_0050",
+      "tile_0051",
+      "tile_0052",
+      "tile_0053",
+    ];
+    const cols = Math.ceil(this.scale.width / TILE_SIZE) + 1;
+    const rows = Math.ceil(this.scale.height / TILE_SIZE) + 1;
+
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const key = Phaser.Utils.Array.GetRandom(tiles);
+        this.add
+          .image(col * TILE_SIZE, row * TILE_SIZE, key)
+          .setOrigin(0)
+          .setScrollFactor(0)
+          .setDepth(-1);
+      }
+    }
 
     this.createAnimations();
 
     this.player = new Player(this, this.scale.width / 2, this.scale.height / 2);
-    this.player.play("player_walk");
+    this.player.play("player_idle");
 
     // Pausa: tecla P
     this.input.keyboard.on("keydown-P", () => {
@@ -83,31 +101,23 @@ export default class GameScene extends Phaser.Scene {
       })
       .setDepth(10);
 
-    // AUDIO: obtener del cache (cargado en BootScene)
+    // AUDIO
     try {
       this.bgm = this.sound.add("bgm", { loop: true, volume: 0.5 });
       this.sfxHit = this.sound.add("sfx_hit", { volume: 0.7 });
       this.sfxPickup = this.sound.add("sfx_pickup", { volume: 0.8 });
 
-      // Intento de autoplay; si el navegador lo bloquea, iniciar en el primer input del usuario
       const playBgmIfAllowed = () => {
         try {
           if (this.audioEnabled && this.bgm && !this.bgm.isPlaying)
             this.bgm.play();
-        } catch (e) {
-          // ignore
-        }
+        } catch (e) {}
       };
 
-      // intenta ahora
       playBgmIfAllowed();
-
-      // si no suena, obliga a arrancar al primer gesto del usuario
       this.input.once("pointerdown", playBgmIfAllowed);
       this.input.keyboard.once("keydown", playBgmIfAllowed);
-    } catch (e) {
-      // ignore if audio not available
-    }
+    } catch (e) {}
 
     // Mute button
     this.muteBtn = this.add
@@ -266,7 +276,6 @@ export default class GameScene extends Phaser.Scene {
   }
 
   spawnEnemy() {
-    // Evitar crear enemigos si el jugador no existe o no está activo
     if (!this.player || !this.player.active) return;
     const margin = 60;
     let x = Phaser.Math.Between(margin, this.scale.width - margin);
@@ -361,7 +370,6 @@ export default class GameScene extends Phaser.Scene {
   }
 
   handlePlayerEnemy(player, enemy) {
-    // Forzar aplicación de daño al jugador usando la instancia guardada en la escena
     const targetPlayer =
       this.player && typeof this.player.takeDamage === "function"
         ? this.player
@@ -370,12 +378,10 @@ export default class GameScene extends Phaser.Scene {
     if (!targetPlayer || !enemy) return;
     if (!targetPlayer.active || !enemy.active) return;
 
-    const dmg = enemy && typeof enemy.damage === "number" ? enemy.damage : 1;
+    const dmg = typeof enemy.damage === "number" ? enemy.damage : 1;
 
     try {
-      // Aplicar daño
       targetPlayer.takeDamage(dmg);
-      // reproducir SFX de golpe si existe
       try {
         if (this.sfxHit && this.audioEnabled) this.sfxHit.play();
       } catch (e) {}
@@ -396,7 +402,6 @@ export default class GameScene extends Phaser.Scene {
       this.hudHigh.setText(`High: ${this.highScore}`);
     }
 
-    // victory condition: example threshold
     if (!this.victory && this.score >= 200) {
       this.victory = true;
       try {

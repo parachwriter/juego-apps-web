@@ -36,7 +36,13 @@ export default class BootScene extends Phaser.Scene {
     this.load.image("zombie_action2","/assets/zombie/zombie_action2.png");
 
     // TILESET
-    this.load.image("tiles", "/assets/world/tilemap.png");
+ // WORLD TILES
+    this.load.image("tile_0048", "/assets/world/tile_0048.png");
+    this.load.image("tile_0049", "/assets/world/tile_0049.png");
+    this.load.image("tile_0050", "/assets/world/tile_0050.png");
+    this.load.image("tile_0051", "/assets/world/tile_0051.png");
+    this.load.image("tile_0052", "/assets/world/tile_0052.png");
+    this.load.image("tile_0053", "/assets/world/tile_0053.png");
 
     // BULLET
     this.load.image("bullet", "/assets/Character/bullet.png");
