@@ -1,68 +1,52 @@
-import Phaser from 'phaser'
+import Phaser from "phaser";
 
 export default class Bullet extends Phaser.Physics.Arcade.Image {
+  constructor(scene, x, y, targetX, targetY) {
+    super(scene, x, y, "bullet");
 
-    constructor(scene, x, y, targetX, targetY) {
+    // =========================
+    // AGREGAR A ESCENA
+    // =========================
+    scene.add.existing(this);
+    scene.physics.add.existing(this);
 
-        super(scene, x, y, 'bullet')
+    // =========================
+    // CONFIGURACIÓN
+    // =========================
+    this.speed = 700;
+    this.damage = 1;
 
-        // =========================
-        // AGREGAR A ESCENA
-        // =========================
+    this.setDisplaySize(12, 12);
 
-        scene.add.existing(this)
-        scene.physics.add.existing(this)
+    // =========================
+    // DIRECCIÓN
+    // =========================
+    const angle = Phaser.Math.Angle.Between(x, y, targetX, targetY);
 
-        this.scene = scene
+    // =========================
+    // ROTACIÓN
+    // =========================
+    this.setRotation(angle);
 
-        // =========================
-        // CONFIGURACIÓN BALA
-        // =========================
+    // =========================
+    // BODY — aplicar en siguiente frame cuando el body ya está listo
+    // =========================
+    scene.time.delayedCall(0, () => {
+      if (!this.active || !this.body) return;
 
-        this.speed = 700
-        this.damage = 1
+      this.body.setAllowGravity(false);
+      this.body.setCircle(6);
 
-        // =========================
-        // FÍSICAS
-        // =========================
+      const velocityX = Math.cos(angle) * this.speed;
+      const velocityY = Math.sin(angle) * this.speed;
+      this.body.setVelocity(velocityX, velocityY);
+    });
 
-        this.setCollideWorldBounds(false)
-
-        // =========================
-        // ROTACIÓN
-        // =========================
-
-        const angle = Phaser.Math.Angle.Between(
-            x,
-            y,
-            targetX,
-            targetY
-        )
-
-        this.setRotation(angle)
-
-        // =========================
-        // MOVIMIENTO
-        // =========================
-
-        scene.physics.velocityFromRotation(
-            angle,
-            this.speed,
-            this.body.velocity
-        )
-
-        // =========================
-        // AUTODESTRUCCIÓN
-        // =========================
-
-        scene.time.delayedCall(2000, () => {
-
-            if (this.active) {
-                this.destroy()
-            }
-
-        })
-
-    }
-
+    // =========================
+    // DESTRUIR AUTOMÁTICAMENTE
+    // =========================
+    scene.time.delayedCall(2000, () => {
+      if (this.active) this.destroy();
+    });
+  }
 }
