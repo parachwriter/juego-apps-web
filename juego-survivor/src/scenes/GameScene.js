@@ -12,6 +12,16 @@ export default class GameScene extends Phaser.Scene {
   // STATS POR NIVEL
   // =========================
   getLevelStats(level) {
+    if (this.infinite) {
+      const wave = Math.max(1, level);
+      return {
+        speed: 70 + wave * 15,
+        health: 1 + Math.floor(wave * 1.5),
+        spawnDelay: Math.max(250, 1600 - wave * 120),
+        victoryScore: Infinity,
+      };
+    }
+
     const stats = {
       1: { speed: 80, health: 2, spawnDelay: 1500, victoryScore: 200 },
       2: { speed: 110, health: 3, spawnDelay: 1100, victoryScore: 250 },
@@ -23,6 +33,13 @@ export default class GameScene extends Phaser.Scene {
 
   create() {
     this.cameras.main.setBackgroundColor("#111111");
+
+    // =========================
+    // MODO DE JUEGO
+    // =========================
+    const { startLevel, infinite } = this.scene.settings.data || {};
+    this.level = startLevel || 1;
+    this.infinite = infinite || false;
 
     // =========================
     // SUELO CON TILES INDIVIDUALES
@@ -86,27 +103,32 @@ export default class GameScene extends Phaser.Scene {
 
     // puntuación
     this.score = 0;
-    // persistencia
-    this.highScore = parseInt(localStorage.getItem("highScore") || "0", 10);
-    const { startLevel } = this.scene.settings.data || {};
-this.level = startLevel || 1;
+    this.victory = false;
+    const hsKey = this.infinite ? "highScoreInfinite" : "highScore";
+    this.highScore = parseInt(localStorage.getItem(hsKey) || "0", 10);
+    this.hsKey = hsKey;
+
     this.audioEnabled = localStorage.getItem("audioEnabled");
     if (this.audioEnabled === null) this.audioEnabled = "true";
     this.audioEnabled = this.audioEnabled === "true";
 
+    // =========================
     // HUD
+    // =========================
     this.scoreText = this.add
       .text(16, 16, `Score: ${this.score}`, {
         fontSize: "24px",
         color: "#ffffff",
       })
       .setDepth(10);
+
     this.hudHigh = this.add
       .text(16, 46, `High: ${this.highScore}`, {
         fontSize: "18px",
         color: "#ffff55",
       })
       .setDepth(10);
+
     this.healthText = this.add
       .text(16, 70, `HP: ${this.player.health}`, {
         fontSize: "18px",
@@ -114,7 +136,33 @@ this.level = startLevel || 1;
       })
       .setDepth(10);
 
+    this.hudLevel = this.add
+      .text(
+        16,
+        96,
+        this.infinite ? `Oleada: ${this.level}` : `Level: ${this.level}`,
+        {
+          fontSize: "18px",
+          color: this.infinite ? "#ff88ff" : "#ffffff",
+        },
+      )
+      .setDepth(10);
+
+    // Badge modo infinito
+    if (this.infinite) {
+      this.add
+        .text(this.scale.width / 2, 16, "♾️ MODO INFINITO", {
+          fontSize: "18px",
+          color: "#ff88ff",
+          fontStyle: "bold",
+        })
+        .setOrigin(0.5, 0)
+        .setDepth(10);
+    }
+
+    // =========================
     // AUDIO
+    // =========================
     try {
       this.bgm = this.sound.add("bgm", { loop: true, volume: 0.5 });
       this.sfxHit = this.sound.add("sfx_hit", { volume: 0.7 });
@@ -158,18 +206,14 @@ this.level = startLevel || 1;
       this.muteBtn.setText(this.audioEnabled ? "🔊" : "🔈");
     });
 
-    // Level HUD
-    this.hudLevel = this.add
-      .text(16, 96, `Level: ${this.level}`, {
-        fontSize: "18px",
-        color: "#ffffff",
-      })
-      .setDepth(10);
-
-    // Timer de nivel — sube cada 30s hasta nivel 4
+    // =========================
+    // TIMER DE NIVEL
+    // solo activo en modo normal
+    // =========================
     this.levelTimer = this.time.addEvent({
       delay: 30000,
       callback: () => {
+        if (this.infinite) return; // en infinito lo controla addScore
         if (this.level >= 4) return;
         this.level++;
         localStorage.setItem("level", String(this.level));
@@ -179,8 +223,8 @@ this.level = startLevel || 1;
       loop: true,
     });
 
-    // Spawn inicial con stats de nivel 1
-    const initialStats = this.getLevelStats(1);
+    // Spawn inicial
+    const initialStats = this.getLevelStats(this.level);
     this.spawnTimer = this.time.addEvent({
       delay: initialStats.spawnDelay,
       callback: this.spawnEnemy,
@@ -195,7 +239,6 @@ this.level = startLevel || 1;
       null,
       this,
     );
-
     this.physics.add.overlap(
       this.player.meleeAttacks,
       this.enemies,
@@ -203,7 +246,6 @@ this.level = startLevel || 1;
       null,
       this,
     );
-
     this.physics.add.collider(
       this.player,
       this.enemies,
@@ -218,6 +260,9 @@ this.level = startLevel || 1;
       callbackScope: this,
       loop: true,
     });
+
+    // Aplicar stats si arrancamos desde un nivel > 1
+    if (this.level > 1) this.applyLevelDifficulty();
   }
 
   update() {
@@ -228,7 +273,6 @@ this.level = startLevel || 1;
   }
 
   createAnimations() {
-    // PLAYER
     if (!this.anims.exists("player_idle")) {
       this.anims.create({
         key: "player_idle",
@@ -261,8 +305,6 @@ this.level = startLevel || 1;
         repeat: 0,
       });
     }
-
-    // ZOMBIE
     if (!this.anims.exists("zombie_idle")) {
       this.anims.create({
         key: "zombie_idle",
@@ -295,7 +337,6 @@ this.level = startLevel || 1;
   applyLevelDifficulty() {
     const { speed, health, spawnDelay } = this.getLevelStats(this.level);
 
-    // Actualizar enemigos ya en escena
     this.enemies.getChildren().forEach((enemy) => {
       if (enemy && enemy.active) {
         enemy.speed = speed;
@@ -303,7 +344,6 @@ this.level = startLevel || 1;
       }
     });
 
-    // Reiniciar spawn timer con nuevo delay
     this.spawnTimer.remove();
     this.spawnTimer = this.time.addEvent({
       delay: spawnDelay,
@@ -312,10 +352,13 @@ this.level = startLevel || 1;
       loop: true,
     });
 
-    // Notificación en pantalla
-    const isMax = this.level === 4;
-    const label = isMax ? "¡NIVEL MÁXIMO!" : `¡NIVEL ${this.level}!`;
-    const color = isMax ? "#ff0000" : "#ff4444";
+    const isMax = !this.infinite && this.level === 4;
+    const label = this.infinite
+      ? `⚡ OLEADA ${this.level}`
+      : isMax
+        ? "¡NIVEL MÁXIMO!"
+        : `¡NIVEL ${this.level}!`;
+    const color = this.infinite ? "#ff88ff" : isMax ? "#ff0000" : "#ff4444";
 
     const text = this.add
       .text(this.scale.width / 2, this.scale.height / 2, label, {
@@ -359,22 +402,18 @@ this.level = startLevel || 1;
     }
 
     const { speed, health } = this.getLevelStats(this.level);
-
     const enemy = new Enemy(this, x, y, this.player);
     enemy.speed = speed;
     enemy.health = health;
-
     enemy.play("zombie_walk");
     this.enemies.add(enemy, true);
   }
 
   spawnPowerUp() {
     if (this.powerUps.countActive(true) > 0) return;
-
     const margin = 60;
     const x = Phaser.Math.Between(margin, this.scale.width - margin);
     const y = Phaser.Math.Between(margin, this.scale.height - margin);
-
     const powerUp = new PowerUp(this, x, y);
     this.powerUps.add(powerUp, true);
   }
@@ -439,12 +478,8 @@ this.level = startLevel || 1;
 
   handleMeleeEnemy(melee, enemy) {
     if (!melee.active || !enemy.active) return;
-
     enemy.takeDamage(melee.damage);
-
-    if (!enemy.active) {
-      this.addScore(15);
-    }
+    if (!enemy.active) this.addScore(15);
   }
 
   handlePlayerEnemy(player, enemy) {
@@ -471,36 +506,48 @@ this.level = startLevel || 1;
     }
   }
 
+  // =========================
+  // PUNTUACIÓN
+  // =========================
   addScore(amount) {
-  this.score += amount;
-  this.scoreText.setText(`Score: ${this.score}`);
+    this.score += amount;
+    this.scoreText.setText(`Score: ${this.score}`);
 
-  if (this.hudHigh && this.score > this.highScore) {
-    this.highScore = this.score;
-    localStorage.setItem("highScore", String(this.highScore));
-    this.hudHigh.setText(`High: ${this.highScore}`);
-  }
+    if (this.score > this.highScore) {
+      this.highScore = this.score;
+      localStorage.setItem(this.hsKey, String(this.highScore));
+      this.hudHigh.setText(`High: ${this.highScore}`);
+    }
 
-  const { victoryScore } = this.getLevelStats(this.level);
-
-  if (!this.victory && this.score >= victoryScore) {
-    // Si no es el último nivel, sube de nivel en vez de ganar
-    if (this.level < 4) {
-      this.score = 0;
-      this.scoreText.setText(`Score: ${this.score}`);
-      this.level++;
-      localStorage.setItem("level", String(this.level));
-      this.hudLevel.setText(`Level: ${this.level}`);
-      this.applyLevelDifficulty();
+    if (this.infinite) {
+      // Cada 150 puntos sube de oleada
+      const wave = Math.floor(this.score / 150) + 1;
+      if (wave > this.level) {
+        this.level = wave;
+        this.hudLevel.setText(`Oleada: ${this.level}`);
+        this.applyLevelDifficulty();
+      }
       return;
     }
 
-    // Nivel 4 completado → victoria
-    this.victory = true;
-    try {
-      if (this.bgm && this.bgm.isPlaying) this.bgm.stop();
-    } catch (e) {}
-    this.scene.start("gameover", { score: this.score, victory: true });
+    const { victoryScore } = this.getLevelStats(this.level);
+
+    if (!this.victory && this.score >= victoryScore) {
+      if (this.level < 4) {
+        this.score = 0;
+        this.scoreText.setText(`Score: ${this.score}`);
+        this.level++;
+        localStorage.setItem("level", String(this.level));
+        this.hudLevel.setText(`Level: ${this.level}`);
+        this.applyLevelDifficulty();
+        return;
+      }
+
+      this.victory = true;
+      try {
+        if (this.bgm && this.bgm.isPlaying) this.bgm.stop();
+      } catch (e) {}
+      this.scene.start("gameover", { score: this.score, victory: true });
+    }
   }
-}
 }
