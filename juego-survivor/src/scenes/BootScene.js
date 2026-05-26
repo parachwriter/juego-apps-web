@@ -1,21 +1,35 @@
-import Phaser from 'phaser'
+import Phaser from "phaser";
 
 export default class BootScene extends Phaser.Scene {
+  constructor() {
+    super("boot");
+  }
 
-    constructor() {
-        super('boot')
-    }
+  preload() {
+    // PLAYER
+    this.load.spritesheet("player", "/assets/Character/player.png", {
+      frameWidth: 80,
+      frameHeight: 110,
+    });
 
-    preload() {
+    // ZOMBIES
+    this.load.spritesheet("zombie", "/assets/zombie/fat_zombie.png", {
+      frameWidth: 192,
+      frameHeight: 88,
+    });
 
-        // cargar assets aquí 
+    // TILESET DEL MUNDO
+    this.load.image("tiles", "/assets/world/tilemap.png");
 
-    }
+    // BULLET
+    this.load.image("bullet", "/assets/Character/bullet.png");
 
-    create() {
+    this.load.on("complete", () => {
+      console.log("ASSETS CARGADOS");
+    });
+  }
 
-        this.scene.start('menu')
-
-    }
-
+  create() {
+    this.scene.start("menu");
+  }
 }

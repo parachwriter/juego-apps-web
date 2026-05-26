@@ -1,22 +1,68 @@
-import Phaser from 'phaser'
+import Phaser from "phaser";
 
 export default class MenuScene extends Phaser.Scene {
+  constructor() {
+    super("menu");
+  }
 
-    constructor() {
-        super('menu')
-    }
+  create() {
+    // =========================
+    // FONDO
+    // =========================
 
-    create() {
+    this.cameras.main.setBackgroundColor("#111111");
 
-        this.add.text(500, 300, 'Zombie 2d', {
-            fontSize: '48px',
-            color: '#ffffff'
-        })
+    // =========================
+    // TÍTULO
+    // =========================
 
-        this.input.keyboard.once('keydown-SPACE', () => {
-            this.scene.start('game')
-        })
+    this.add
+      .text(this.scale.width / 2, 180, "ZOMBIE SURVIVOR", {
+        fontSize: "64px",
+        color: "#ffffff",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5);
 
-    }
+    // =========================
+    // SUBTÍTULO
+    // =========================
 
+    this.add
+      .text(this.scale.width / 2, 280, "Presiona SPACE para iniciar", {
+        fontSize: "28px",
+        color: "#aaaaaa",
+      })
+      .setOrigin(0.5);
+
+    // =========================
+    // CONTROLES
+    // =========================
+
+    this.add
+      .text(
+        this.scale.width / 2,
+        380,
+        [
+          "WASD → Mover",
+          "Mouse → Apuntar",
+          "Click Izquierdo → Disparar",
+          "SPACE → Melee",
+        ],
+        {
+          fontSize: "22px",
+          color: "#dddddd",
+          align: "center",
+        },
+      )
+      .setOrigin(0.5);
+
+    // =========================
+    // INPUT
+    // =========================
+
+    this.input.keyboard.once("keydown-SPACE", () => {
+      this.scene.start("game");
+    });
+  }
 }
